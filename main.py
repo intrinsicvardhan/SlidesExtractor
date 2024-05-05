@@ -1,10 +1,10 @@
 import os
 import cv2
-from googleapiclient.discovery import build
-from subprocess import Popen, PIPE
+# from googleapiclient.discovery import build
+# from subprocess import Popen, PIPE
 import numpy as np
 from urllib.parse import urlparse, parse_qs
-from iso8601 import parse_date
+# from iso8601 import parse_date
 from pytube import YouTube
 
 # Import is_blank_frame from extract_frames module
@@ -19,38 +19,30 @@ INTERVAL = 20
 if not os.path.exists('slides'):
     os.makedirs('slides')
 
+
 def extract_slides(video_path, interval):
     slide_count = 0
     prev_frame = None
-    cmd = [
-        '/usr/bin/ffmpeg',
-        '-i', video_path,
-        '-vf', f'fps=1/{interval}',
-        '-f', 'image2pipe',
-        '-vcodec', 'mjpeg',
-        '-'
-    ]
-
-    process = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    cap = cv2.VideoCapture(video_path)
 
     while True:
-        frame_data = process.stdout.read(1024*1024)
-        if not frame_data:
+        ret, frame = cap.read()
+        if not ret:
             break
-
-        frame = cv2.imdecode(np.frombuffer(frame_data, np.uint8), cv2.IMREAD_COLOR)
 
         # Check if the frame is not empty and normalize it
         if frame is not None:
             frame = frame / 255.0  # Normalize the frame to the range [0, 1]
 
-            # Check if the frame is not blank
-            if not is_blank_frame(frame) and (prev_frame is None or detect_slide_transition(prev_frame, frame)):
-                cv2.imwrite(os.path.join('slides', f'frame_{slide_count}.jpg'), (frame * 255).astype(np.uint8))
-                print(f'Saved frame_{slide_count}.jpg')
-                slide_count += 1
+        # Check if the frame is not blank
+        if not is_blank_frame(frame) and (prev_frame is None or detect_slide_transition(prev_frame, frame)):
+            cv2.imwrite(os.path.join('slides', f'frame_{slide_count}.jpg'), (frame * 255).astype(np.uint8))
+            print(f'Saved frame_{slide_count}.jpg')
+            slide_count += 1
 
-    process.terminate()
+        prev_frame = frame
+
+    cap.release()
 
 try:
     yt = YouTube(VIDEO_URL)

@@ -45,11 +45,10 @@ def extract_slides(video_path, interval):
             frame = frame / 255.0  # Normalize the frame to the range [0, 1]
 
             # Check if the frame is not blank
-            if not is_blank_frame(frame) and not is_blank_frame(prev_frame) and not detect_slide_transition(prev_frame, frame):
+            if not is_blank_frame(frame) and (prev_frame is None or detect_slide_transition(prev_frame, frame)):
                 cv2.imwrite(os.path.join('slides', f'frame_{slide_count}.jpg'), (frame * 255).astype(np.uint8))
                 print(f'Saved frame_{slide_count}.jpg')
-            prev_frame = frame
-            slide_count += 1
+                slide_count += 1
 
     process.terminate()
 
